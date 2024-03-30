@@ -61,6 +61,7 @@ class NotificationGenerator:
         extra_data=None,
         notification_mediums=False,
         worker_initated=False,
+        users_tagged=None,
     ):
         if not worker_initated:
             if not isinstance(event_type, Notification.EventType):
@@ -122,6 +123,7 @@ class NotificationGenerator:
         self.generate_for_facility = generate_for_facility
         self.defer_notifications = defer_notifications
         self.generate_extra_users()
+        self.users_tagged = users_tagged
 
     def serialize_extra_data(self, extra_data):
         if not extra_data:
@@ -236,7 +238,10 @@ class NotificationGenerator:
                     self.caused_object.patient.name,
                     self.caused_by.get_full_name(),
                 )
-
+            elif self.event == Notification.Event.USER_TAGGED.value:
+                message = "{} just mentioned you in a note for Patient {}".format(
+                    self.caused_by.get_full_name(), self.caused_object.patient.name
+                )
         return message
 
     def generate_sms_message(self):
@@ -328,6 +333,7 @@ class NotificationGenerator:
         users = []
         extra_users = self.extra_users
         caused_user = self.caused_by
+        users_tagged = self.users_tagged
         facility_users = FacilityUser.objects.filter(facility_id=self.facility.id)
         if self.event != Notification.Event.MESSAGE:
             facility_users.exclude(
@@ -343,6 +349,8 @@ class NotificationGenerator:
             user_obj = User.objects.get(id=user_id)
             if user_obj.id != caused_user.id:
                 users.append(user_obj)
+        if users_tagged:
+            users.append(users_tagged)
         return users
 
     def generate_message_for_user(self, user, message, medium):

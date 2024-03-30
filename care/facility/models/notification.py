@@ -39,6 +39,7 @@ class Notification(FacilityBaseModel):
         SHIFTING_UPDATED = 200
         PATIENT_NOTE_ADDED = 210
         PUSH_MESSAGE = 220
+        USER_TAGGED = 230
 
     EventChoices = [(e.value, e.name) for e in Event]
 
@@ -64,3 +65,6 @@ class Notification(FacilityBaseModel):
     event = models.IntegerField(choices=EventChoices, default=Event.MESSAGE.value)
     message = models.TextField(max_length=2000, null=True, default=None)
     caused_objects = JSONField(null=True, blank=True, default=dict)
+    user_tagged = models.ManyToManyField(
+        User, related_name="notification_user_tagged", blank=True
+    )

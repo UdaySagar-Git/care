@@ -29,6 +29,7 @@ class FileUpload(FacilityBaseModel):
         DISCHARGE_SUMMARY = 5
         COMMUNICATION = 6
         CONSENT_RECORD = 7
+        NOTES = 8
 
     class FileCategory(enum.Enum):
         UNSPECIFIED = "UNSPECIFIED"

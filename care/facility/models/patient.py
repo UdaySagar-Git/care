@@ -19,6 +19,7 @@ from care.facility.models import (
     State,
     Ward,
 )
+from care.facility.models.file_upload import FileUpload
 from care.facility.models.icd11_diagnosis import ConditionVerificationStatus
 from care.facility.models.mixins.permissions.facility import (
     FacilityRelatedPermissionMixin,
@@ -716,6 +717,19 @@ class PatientMobileOTP(BaseModel):
     otp = models.CharField(max_length=10)
 
 
+# class PatientNotesTags(models.Model):
+#     class TagType(enum.Enum):
+#         USERS = 1
+#         NOTES = 2
+#         FILES = 3
+
+#     TagChoices = [(e.value, e.name) for e in TagType]
+#     tag_type = models.IntegerField(choices=TagChoices)
+#     tagged_users = models.ManyToManyField(User, related_name="tagged_users", blank=True)
+#     tagged_notes = models.ManyToManyField(PatientNotes, related_name="tagged_notes", blank=True)
+#     tagged_files = models.ManyToManyField(FileUpload, related_name="tagged_files", blank=True)
+
+
 class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
     patient = models.ForeignKey(
         PatientRegistration, on_delete=models.PROTECT, null=False, blank=False
@@ -733,6 +747,14 @@ class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
         null=True,
     )
     note = models.TextField(default="", blank=True)
+    parent_note = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    others_notes = models.ManyToManyField(
+        "self", related_name="other_notes", blank=True
+    )
+    attachments = models.ManyToManyField(FileUpload, blank=True)
+    tagged_users = models.ManyToManyField(User, related_name="tagged_users", blank=True)
 
     def get_related_consultation(self):
         # This is a temporary hack! this model does not have `assigned_to` field

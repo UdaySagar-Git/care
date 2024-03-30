@@ -858,6 +858,14 @@ class PatientNotesViewSet(
             generate_for_facility=True,
         ).generate()
 
+        NotificationGenerator(
+            event=Notification.Event.USER_TAGGED,
+            caused_by=self.request.user,
+            caused_object=instance,
+            facility=patient.facility,
+            users_tagged=instance.tagged_users.all(),
+        ).generate()
+
         return instance
 
     def perform_update(self, serializer):
