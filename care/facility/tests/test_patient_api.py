@@ -31,7 +31,7 @@ class ExpectedPatientNoteKeys(Enum):
     REPLIES = "replies"
     FILES = "files"
     MENTIONED_USERS = "mentioned_users"
-    PARENT_NOTE_OBJECT = "parent_note_object"
+    ROOT_NOTE_OBJECT = "root_note_object"
     CHILD_NOTES = "child_notes"
 
 

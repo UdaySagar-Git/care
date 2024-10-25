@@ -497,9 +497,7 @@ class PatientNotesSerializer(serializers.ModelSerializer):
     files = serializers.SerializerMethodField()
     replies = ReplyToPatientNoteSerializer(many=True, read_only=True)
     child_notes = ReplyToPatientNoteSerializer(many=True, read_only=True)
-    parent_note_object = ReplyToPatientNoteSerializer(
-        source="parent_note", read_only=True
-    )
+    root_note_object = ReplyToPatientNoteSerializer(source="root_note", read_only=True)
     mentioned_users = UserBaseMinimumSerializer(many=True, read_only=True)
 
     def get_files(self, obj):
@@ -548,8 +546,8 @@ class PatientNotesSerializer(serializers.ModelSerializer):
                 msg = "Reply to note should be in the same consultation"
                 raise serializers.ValidationError(msg)
 
-            # Set the parent_note to the parent of the reply_to_note if it exists else set it to the reply_to_note
-            validated_data["parent_note"] = reply_to_note.parent_note or reply_to_note
+            # Set the root_note to the parent of the reply_to_note if it exists else set it to the reply_to_note
+            validated_data["root_note"] = reply_to_note.root_note or reply_to_note
 
         user = self.context["request"].user
         note = validated_data.get("note")
@@ -604,7 +602,7 @@ class PatientNotesSerializer(serializers.ModelSerializer):
             "files",
             "replies",
             "child_notes",
-            "parent_note_object",
+            "root_note_object",
             "mentioned_users",
         )
         read_only_fields = (

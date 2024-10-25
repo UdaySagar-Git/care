@@ -807,7 +807,7 @@ class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
         related_name="replies",
     )
     note = models.TextField(default="", blank=True)
-    parent_note = models.ForeignKey(
+    root_note = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
         null=True,
