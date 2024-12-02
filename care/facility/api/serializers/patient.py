@@ -506,7 +506,7 @@ class PatientNotesSerializer(serializers.ModelSerializer):
         return FileUploadListSerializer(
             FileUpload.objects.filter(
                 associating_id=obj.external_id,
-                file_type=FileUpload.FileType.NOTES.value,
+                file_type=FileUpload.FileType.PATIENT_NOTES.value,
                 upload_completed=True,
                 is_archived=False,
             ),
