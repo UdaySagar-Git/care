@@ -1004,7 +1004,7 @@ class PatientNotesViewSet(
         NotificationGenerator(
             event=Notification.Event.PUSH_MESSAGE,
             caused_by=self.request.user,
-            caused_object=instance.consultation,
+            caused_object=instance,
             message=message,
             facility=patient.facility,
             generate_for_facility=True,
@@ -1013,7 +1013,7 @@ class PatientNotesViewSet(
         NotificationGenerator(
             event=Notification.Event.PATIENT_NOTE_ADDED,
             caused_by=self.request.user,
-            caused_object=instance.consultation,
+            caused_object=instance,
             facility=patient.facility,
             generate_for_facility=True,
         ).generate()
@@ -1021,7 +1021,7 @@ class PatientNotesViewSet(
         NotificationGenerator(
             event=Notification.Event.PATIENT_NOTE_MENTIONED,
             caused_by=self.request.user,
-            caused_object=instance.consultation,
+            caused_object=instance,
             facility=patient.facility,
             mentioned_users=instance.mentioned_users,
         ).generate()

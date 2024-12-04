@@ -303,6 +303,10 @@ class NotificationGenerator:
             self.caused_objects["facility"] = str(
                 self.caused_object.facility.external_id
             )
+            if self.caused_object.consultation:
+                self.caused_objects["consultation"] = str(
+                    self.caused_object.consultation.external_id
+                )
 
         return True
 
