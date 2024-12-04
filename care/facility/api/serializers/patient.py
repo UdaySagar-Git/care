@@ -455,11 +455,35 @@ class PatientNotesEditSerializer(serializers.ModelSerializer):
         exclude = ("patient_note",)
 
 
+def get_patient_note_files(obj, context):
+    from care.facility.api.serializers.file_upload import (
+        FileUploadListSerializer,
+        check_permissions,
+    )
+
+    file_type = FileUpload.FileType.PATIENT_NOTES
+    if check_permissions(file_type, obj.external_id, context["request"].user, "read"):
+        return FileUploadListSerializer(
+            FileUpload.objects.filter(
+                associating_id=obj.external_id,
+                file_type=file_type,
+                upload_completed=True,
+                is_archived=False,
+            ),
+            many=True,
+        ).data
+    return None
+
+
 class ReplyToPatientNoteSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source="external_id", read_only=True)
     created_by_object = UserBaseMinimumSerializer(source="created_by", read_only=True)
     reply_to = serializers.CharField(source="reply_to.external_id", read_only=True)
     mentioned_users = UserBaseMinimumSerializer(many=True, read_only=True)
+    files = serializers.SerializerMethodField()
+
+    def get_files(self, obj):
+        return get_patient_note_files(obj, self.context)
 
     class Meta:
         model = PatientNotes
@@ -471,6 +495,7 @@ class ReplyToPatientNoteSerializer(serializers.ModelSerializer):
             "note",
             "reply_to",
             "mentioned_users",
+            "files",
         )
 
 
@@ -503,17 +528,7 @@ class PatientNotesSerializer(serializers.ModelSerializer):
     mentioned_users = UserBaseMinimumSerializer(many=True, read_only=True)
 
     def get_files(self, obj):
-        from care.facility.api.serializers.file_upload import FileUploadListSerializer
-
-        return FileUploadListSerializer(
-            FileUpload.objects.filter(
-                associating_id=obj.external_id,
-                file_type=FileUpload.FileType.PATIENT_NOTES.value,
-                upload_completed=True,
-                is_archived=False,
-            ),
-            many=True,
-        ).data
+        return get_patient_note_files(obj, self.context)
 
     def validate_empty_values(self, data):
         if not data.get("note", "").strip():
