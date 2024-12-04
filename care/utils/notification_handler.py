@@ -314,7 +314,7 @@ class NotificationGenerator:
         return True
 
     def generate_system_users(self):
-        users = []
+        users = set()
         extra_users = self.extra_users
         caused_user = self.caused_by
         mentioned_users = self.mentioned_users
@@ -330,17 +330,17 @@ class NotificationGenerator:
                 )
             for facility_user in facility_users:
                 if facility_user.user.id != caused_user.id:
-                    users.append(facility_user.user)
+                    users.add(facility_user.user)
 
         for user_id in extra_users:
             user_obj = User.objects.get(id=user_id)
             if user_obj.id != caused_user.id:
-                users.append(user_obj)
+                users.add(user_obj)
 
         if mentioned_users:
-            users.extend(user for user in mentioned_users if user.id != caused_user.id)
+            users.update(user for user in mentioned_users if user.id != caused_user.id)
 
-        return users
+        return list(users)
 
     def generate_message_for_user(self, user, message, medium):
         notification = Notification()
