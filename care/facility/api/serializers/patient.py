@@ -459,6 +459,7 @@ class ReplyToPatientNoteSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source="external_id", read_only=True)
     created_by_object = UserBaseMinimumSerializer(source="created_by", read_only=True)
     reply_to = serializers.CharField(source="reply_to.external_id", read_only=True)
+    mentioned_users = UserBaseMinimumSerializer(many=True, read_only=True)
 
     class Meta:
         model = PatientNotes
@@ -469,6 +470,7 @@ class ReplyToPatientNoteSerializer(serializers.ModelSerializer):
             "user_type",
             "note",
             "reply_to",
+            "mentioned_users",
         )
 
 
