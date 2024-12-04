@@ -97,7 +97,7 @@ class NotificationGenerator:
                 "defer_notifications": defer_notifications,
                 "generate_for_facility": generate_for_facility,
                 "extra_users": extra_users,
-                "mentioned_users": mentioned_users,
+                "mentioned_users": [user.id for user in (mentioned_users or [])],
                 "extra_data": self.serialize_extra_data(extra_data),
                 "notification_mediums": mediums,
                 "worker_initated": True,
@@ -111,6 +111,7 @@ class NotificationGenerator:
         caused_object = get_model_class(caused_object).objects.get(id=caused_object_pk)
         caused_by = User.objects.get(id=caused_by)
         facility = Facility.objects.get(id=facility)
+        mentioned_users = User.objects.filter(id__in=mentioned_users)
         self.notification_mediums = notification_mediums
         if not notification_mediums:
             self.notification_mediums = self._get_default_medium()
