@@ -97,6 +97,7 @@ class NotificationGenerator:
                 "defer_notifications": defer_notifications,
                 "generate_for_facility": generate_for_facility,
                 "extra_users": extra_users,
+                "mentioned_users": mentioned_users,
                 "extra_data": self.serialize_extra_data(extra_data),
                 "notification_mediums": mediums,
                 "worker_initated": True,
@@ -191,10 +192,7 @@ class NotificationGenerator:
                 message = f"Prescription for Patient {self.caused_object.patient.name} was created by {self.caused_by.get_full_name()}"
             if self.event == Notification.Event.PATIENT_PRESCRIPTION_UPDATED.value:
                 message = f"Prescription for Patient {self.caused_object.patient.name} was updated by {self.caused_by.get_full_name()}"
-            if self.event == Notification.Event.PATIENT_NOTE_ADDED.value:
-                message = f"Notes for Patient {self.caused_object.patient.name} was added by {self.caused_by.get_full_name()}"
-            elif self.event == Notification.Event.PATIENT_NOTE_MENTIONED.value:
-                message = f"{self.caused_by.get_full_name()} just mentioned you in a note for Patient {self.caused_object.patient.name}"
+
         elif isinstance(self.caused_object, InvestigationSession):
             if self.event == Notification.Event.INVESTIGATION_SESSION_CREATED.value:
                 message = (
@@ -220,7 +218,11 @@ class NotificationGenerator:
         elif isinstance(self.caused_object, ShiftingRequest):
             if self.event == Notification.Event.SHIFTING_UPDATED.value:
                 message = f"Shifting for Patient {self.caused_object.patient.name} was updated by {self.caused_by.get_full_name()}"
-
+        elif isinstance(self.caused_object, PatientNotes):
+            if self.event == Notification.Event.PATIENT_NOTE_ADDED.value:
+                message = f"Notes for Patient {self.caused_object.patient.name} was added by {self.caused_by.get_full_name()}"
+            if self.event == Notification.Event.PATIENT_NOTE_MENTIONED.value:
+                message = f"{self.caused_by.get_full_name()} mentioned you in a note for Patient {self.caused_object.patient.name}"
         return message
 
     def generate_sms_message(self):
@@ -315,23 +317,28 @@ class NotificationGenerator:
         extra_users = self.extra_users
         caused_user = self.caused_by
         mentioned_users = self.mentioned_users
-        facility_users = FacilityUser.objects.filter(facility_id=self.facility.id)
-        if self.event != Notification.Event.MESSAGE:
-            facility_users.exclude(
-                user__user_type__in=(
-                    User.TYPE_VALUE_MAP["Staff"],
-                    User.TYPE_VALUE_MAP["StaffReadOnly"],
+
+        if self.generate_for_facility:
+            facility_users = FacilityUser.objects.filter(facility_id=self.facility.id)
+            if self.event != Notification.Event.MESSAGE:
+                facility_users.exclude(
+                    user__user_type__in=(
+                        User.TYPE_VALUE_MAP["Staff"],
+                        User.TYPE_VALUE_MAP["StaffReadOnly"],
+                    )
                 )
-            )
-        for facility_user in facility_users:
-            if facility_user.user.id != caused_user.id:
-                users.append(facility_user.user)
+            for facility_user in facility_users:
+                if facility_user.user.id != caused_user.id:
+                    users.append(facility_user.user)
+
         for user_id in extra_users:
             user_obj = User.objects.get(id=user_id)
             if user_obj.id != caused_user.id:
                 users.append(user_obj)
+
         if mentioned_users:
-            users.extend(mentioned_users)
+            users.extend(user for user in mentioned_users if user.id != caused_user.id)
+
         return users
 
     def generate_message_for_user(self, user, message, medium):

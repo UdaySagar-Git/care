@@ -823,7 +823,8 @@ class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
 
     @property
     def mentioned_users(self):
-        usernames = set(re.findall(r"@(\w+)", self.note))
+        # handling both - and _ (valid usernames : devdoctor, dev-doctor and dev_doctor)
+        usernames = set(re.findall(r"@([a-zA-Z0-9_-]+)", self.note))
         return User.objects.filter(username__in=usernames)
 
 
