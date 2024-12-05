@@ -1019,7 +1019,7 @@ class PatientNotesViewSet(
         ).generate()
 
         NotificationGenerator(
-            event=Notification.Event.PATIENT_NOTE_MENTIONED,
+            event=Notification.Event.MENTIONED_IN_PATIENT_NOTE,
             caused_by=self.request.user,
             caused_object=instance,
             facility=patient.facility,

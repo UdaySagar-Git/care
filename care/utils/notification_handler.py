@@ -222,7 +222,7 @@ class NotificationGenerator:
         elif isinstance(self.caused_object, PatientNotes):
             if self.event == Notification.Event.PATIENT_NOTE_ADDED.value:
                 message = f"Notes for Patient {self.caused_object.patient.name} was added by {self.caused_by.get_full_name()}"
-            if self.event == Notification.Event.PATIENT_NOTE_MENTIONED.value:
+            if self.event == Notification.Event.MENTIONED_IN_PATIENT_NOTE.value:
                 message = f"{self.caused_by.get_full_name()} mentioned you in a note for Patient {self.caused_object.patient.name}"
         return message
 
