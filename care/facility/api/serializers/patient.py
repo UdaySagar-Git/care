@@ -535,6 +535,38 @@ class PatientNotesSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"note": ["Note cannot be empty"]})
         return super().validate_empty_values(data)
 
+    def validate(self, data):
+        validated_data = super().validate(data)
+
+        if reply_to := validated_data.get("reply_to"):
+            if (
+                validated_data.get("thread")
+                and reply_to.thread != validated_data["thread"]
+            ):
+                msg = "Reply to note should be in the same thread"
+                raise serializers.ValidationError(msg)
+
+            if (
+                validated_data.get("consultation")
+                and reply_to.consultation != validated_data["consultation"]
+            ):
+                msg = "Reply to note should be in the same consultation"
+                raise serializers.ValidationError(msg)
+
+            if self.instance and reply_to.id == self.instance.id:
+                msg = "A note cannot reply to itself"
+                raise serializers.ValidationError(msg)
+
+            # Check for circular references in ancestry chain
+            current_note = reply_to
+            while current_note:
+                if self.instance and current_note.id == self.instance.id:
+                    msg = "A note cannot be a reply to one of its own replies"
+                    raise serializers.ValidationError(msg)
+                current_note = current_note.root_note
+
+        return validated_data
+
     def create(self, validated_data):
         if "thread" not in validated_data:
             raise serializers.ValidationError({"thread": "This field is required"})
@@ -554,17 +586,8 @@ class PatientNotesSerializer(serializers.ModelSerializer):
             # If the user is not a doctor then the user type is the same as the user type
             validated_data["user_type"] = user_type
 
-        if validated_data.get("reply_to"):
-            reply_to_note = validated_data["reply_to"]
-            if reply_to_note.thread != validated_data["thread"]:
-                msg = "Reply to note should be in the same thread"
-                raise serializers.ValidationError(msg)
-            if reply_to_note.consultation != validated_data.get("consultation"):
-                msg = "Reply to note should be in the same consultation"
-                raise serializers.ValidationError(msg)
-
-            # Set the root_note to the parent of the reply_to_note if it exists else set it to the reply_to_note
-            validated_data["root_note"] = reply_to_note.root_note or reply_to_note
+        if reply_to := validated_data.get("reply_to"):
+            validated_data["root_note"] = reply_to.root_note or reply_to
 
         user = self.context["request"].user
         note = validated_data.get("note")

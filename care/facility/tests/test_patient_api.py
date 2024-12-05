@@ -457,6 +457,72 @@ class PatientNotesTestCase(TestUtils, APITestCase):
             reply_get_response.data["root_note_object"]["id"], root_note_id
         )
 
+    def test_note_circular_references(self):
+        """
+        Test prevention of circular references in note hierarchy
+        """
+        self.client.force_authenticate(user=self.user)
+
+        root_note_data = {
+            "facility": self.patient.facility,
+            "note": "Initial assessment",
+            "thread": PatientNoteThreadChoices.DOCTORS,
+            "consultation": self.consultation.external_id,
+        }
+
+        root_response = self.client.post(
+            f"/api/v1/patient/{self.patient.external_id}/notes/", data=root_note_data
+        )
+        self.assertEqual(root_response.status_code, status.HTTP_201_CREATED)
+        root_note_id = root_response.data["id"]
+
+        # Try to create a reply to the root note
+        reply_data = {
+            "facility": self.patient.facility,
+            "note": "Follow-up on assessment",
+            "thread": PatientNoteThreadChoices.DOCTORS,
+            "consultation": self.consultation.external_id,
+            "reply_to": root_note_id,
+        }
+
+        reply_response = self.client.post(
+            f"/api/v1/patient/{self.patient.external_id}/notes/", data=reply_data
+        )
+        self.assertEqual(reply_response.status_code, status.HTTP_201_CREATED)
+
+        # Try to make root note reply to the reply (circular reference)
+        circular_data = {
+            "note": "Circular reply",
+            "thread": PatientNoteThreadChoices.DOCTORS,
+            "consultation": self.consultation.external_id,
+            "reply_to": reply_response.data["id"],
+        }
+
+        circular_response = self.client.put(
+            f"/api/v1/patient/{self.patient.external_id}/notes/{root_note_id}/",
+            data=circular_data,
+        )
+        self.assertEqual(circular_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "A note cannot be a reply to one of its own replies",
+            str(circular_response.data),
+        )
+
+        # Try to make a note reply to itself
+        self_reply_data = {
+            "note": "Self reply",
+            "thread": PatientNoteThreadChoices.DOCTORS,
+            "consultation": self.consultation.external_id,
+            "reply_to": root_note_id,
+        }
+
+        self_reply_response = self.client.put(
+            f"/api/v1/patient/{self.patient.external_id}/notes/{root_note_id}/",
+            data=self_reply_data,
+        )
+        self.assertEqual(self_reply_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("A note cannot reply to itself", str(self_reply_response.data))
+
 
 class PatientTestCase(TestUtils, APITestCase):
     @classmethod

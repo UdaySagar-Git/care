@@ -823,9 +823,11 @@ class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
 
     @property
     def mentioned_users(self):
-        # handling both - and _ (valid usernames : devdoctor, dev-doctor and dev_doctor)
-        usernames = set(re.findall(r"@([a-zA-Z0-9_-]+)", self.note))
-        return User.objects.filter(username__in=usernames)
+        if not hasattr(self, "_mentioned_users_cache"):
+            # handling both - and _ (valid usernames : devdoctor, dev-doctor and dev_doctor)
+            usernames = set(re.findall(r"@([a-zA-Z0-9][-_a-zA-Z0-9]{0,38})", self.note))
+            self._mentioned_users_cache = User.objects.filter(username__in=usernames)
+        return self._mentioned_users_cache
 
 
 class PatientNotesEdit(models.Model):
