@@ -824,14 +824,14 @@ class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
 
     @property
     def mentioned_users(self):
-        key = f"patient_note_mentions_{self.id}"
+        key = f"patient_note_mentions:{self.id}:{self.modified_date.timestamp()}"
         hit = cache.get(key)
 
         if not hit:
             # handling both - and _ (valid usernames : devdoctor, dev-doctor and dev_doctor)
             usernames = set(re.findall(r"@([a-zA-Z0-9][-_a-zA-Z0-9]{0,38})", self.note))
             users = User.objects.filter(username__in=usernames)
-            cache.set(key, users, 60 * 60)  # 1 hour
+            cache.set(key, users, 60 * 60 * 24)  # 1 day
             return users
 
         return hit
