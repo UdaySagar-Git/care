@@ -19,7 +19,7 @@ from care.utils.notification_handler import NotificationGenerator
 from care.utils.serializers.fields import ChoiceField
 
 
-def check_permissions(file_type, associating_id, user, action="create"):  # noqa: PLR0911, PLR0912
+def check_permissions(file_type, associating_id, user, action="create"):  # noqa: PLR0911, PLR0912, PLR0915
     try:
         if file_type == FileUpload.FileType.PATIENT.value:
             patient = PatientRegistration.objects.get(external_id=associating_id)
