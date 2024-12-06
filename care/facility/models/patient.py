@@ -4,6 +4,7 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.core.cache import cache
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Case, F, Func, JSONField, Value, When
@@ -823,11 +824,17 @@ class PatientNotes(FacilityBaseModel, ConsultationRelatedPermissionMixin):
 
     @property
     def mentioned_users(self):
-        if not hasattr(self, "_mentioned_users_cache"):
+        key = f"patient_note_mentions_{self.id}"
+        hit = cache.get(key)
+
+        if not hit:
             # handling both - and _ (valid usernames : devdoctor, dev-doctor and dev_doctor)
             usernames = set(re.findall(r"@([a-zA-Z0-9][-_a-zA-Z0-9]{0,38})", self.note))
-            self._mentioned_users_cache = User.objects.filter(username__in=usernames)
-        return self._mentioned_users_cache
+            users = User.objects.filter(username__in=usernames)
+            cache.set(key, users, 60 * 60)  # 1 hour
+            return users
+
+        return hit
 
 
 class PatientNotesEdit(models.Model):
